@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.1.1...v1.2.0) (2026-08-02)
+
+### 🚀 Features
+
+* gave the housing depth with ambient light and grain ([433ba27](https://github.com/karlspace/RDAP-DomainCheck/commit/433ba274269ed80cc985a2bf157fbe72b0a1531d))
+
 ## [1.1.1](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.1.0...v1.1.1) (2026-08-02)
 
 ### 🐛 Bug Fixes
