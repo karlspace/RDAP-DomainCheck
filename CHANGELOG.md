@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.1...v1.0.2) (2026-08-02)
+
+### 🐛 Bug Fixes
+
+* reported CORS-blocked registries as such, not unreachable ([e50ede4](https://github.com/karlspace/RDAP-DomainCheck/commit/e50ede412661cade8dbe6f8f7486cd1d93d0455e))
+
 ## [1.0.1](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.0...v1.0.1) (2026-08-02)
 
 ### 🐛 Bug Fixes
