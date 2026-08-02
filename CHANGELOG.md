@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.2...v1.1.0) (2026-08-02)
+
+### 🚀 Features
+
+* added optional DNS pre-check for blocked registries ([2029c9c](https://github.com/karlspace/RDAP-DomainCheck/commit/2029c9c067166a08093dda2733de3ebacb1bb545))
+
 ## [1.0.2](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.1...v1.0.2) (2026-08-02)
 
 ### 🐛 Bug Fixes
