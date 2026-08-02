@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.0...v1.0.1) (2026-08-02)
+
+### 🐛 Bug Fixes
+
+* **ci:** excluded generated changelog from format check ([736f010](https://github.com/karlspace/RDAP-DomainCheck/commit/736f010a7c9e4f67c5ef1a3e383df0544612b566))
+* **ci:** validated pull requests without the shared workflow ([60bba04](https://github.com/karlspace/RDAP-DomainCheck/commit/60bba0455797ac1a0ee33983a37b8a729a4de9eb))
+
 ## 1.0.0 (2026-08-02)
 
 ### 🚀 Features
