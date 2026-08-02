@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.2.0...v1.2.1) (2026-08-02)
+
+### 🐛 Bug Fixes
+
+* made the ambient light visible in light mode ([e13669e](https://github.com/karlspace/RDAP-DomainCheck/commit/e13669eb123d1ec64fe688c7bb53bd80e661d913))
+
 ## [1.2.0](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.1.1...v1.2.0) (2026-08-02)
 
 ### 🚀 Features
