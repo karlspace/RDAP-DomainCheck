@@ -1,20 +1,23 @@
 # =============================================================================
 # Pull Request validation
 # =============================================================================
-# Delegates to the shared Node.js build workflow rather than reimplementing the
-# toolchain locally. This repo is plain npm (no pnpm/turbo `packageManager`
-# conflict), so the reusable workflow applies without the workarounds some
-# sibling repos need.
+# Self-hosted rather than the shared nodejs-build.yml, for a reason that cannot
+# be worked around from the caller side:
 #
-# No `secrets: inherit` here, unlike release.yml. Dependabot-triggered runs
-# resolve secrets from a separate store that this event cannot reach, and the
-# resolution happens before any job starts — which surfaced as a startup_failure
-# on every Dependabot PR. Every secret nodejs-build.yml declares is optional
-# (the SonarQube step skips itself when its token is absent), so dropping the
-# line costs nothing here.
+# nodejs-build.yml contains a code-quality job, so calling it requires the
+# caller to grant `pull-requests: write`. GitHub validates the permissions of
+# every called workflow when the run is created — before any job `if:` is
+# evaluated — so the requirement holds even though that job is disabled here.
+# For Dependabot-triggered runs the GITHUB_TOKEN is read-only and that ceiling
+# cannot be raised, so every Dependabot pull request ended in startup_failure
+# with no job and no log. Since dependency bumps are most of the pull requests
+# in this repo, they are the ones that most need validating.
 #
-# Pipeline: format check → lint → typecheck → tests (with coverage gate) →
-#           build → npm audit
+# The same reasoning is why the sibling repositories validate pull requests
+# inline as well. release.yml keeps the shared workflow: it runs on push, where
+# the required permissions are available.
+#
+# The step sequence mirrors nodejs-build.yml so both gates stay comparable.
 # =============================================================================
 
 name: ✅ PR
@@ -33,28 +36,41 @@ concurrency:
 
 jobs:
   validate:
-    name: 🔍 Validate Node.js Build
-    uses: bauer-group/automation-templates/.github/workflows/nodejs-build.yml@main
-    with:
-      node-version-file: '.nvmrc'
-      package-manager: 'npm'
-      frozen-lockfile: true
-      run-format-check: true
-      format-command: 'npm run format:check'
-      run-lint: true
-      lint-command: 'npm run lint'
-      run-typecheck: true
-      typecheck-command: 'npm run typecheck'
-      run-tests: true
-      test-command: 'npm run test'
-      # Coverage thresholds live in vitest.config.ts (80% across the board), so
-      # the run itself is the gate — no second number to keep in sync here.
-      test-coverage: true
-      coverage-command: 'npm run test:coverage'
-      build-command: 'npm run build'
-      run-audit: true
-      audit-level: 'high'
-      # The app ships zero runtime dependencies; only dev tooling could ever
-      # flag, and that must not block a PR on a transitive advisory.
-      audit-production-only: true
-      upload-artifacts: false
+    name: 🧪 Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 💅 Format check
+        run: npm run format:check
+
+      - name: 🎨 Lint
+        run: npm run lint
+
+      - name: 🔎 Typecheck
+        run: npm run typecheck
+
+      - name: 🧪 Test
+        # Coverage thresholds live in vitest.config.ts (80% across the board),
+        # so the run itself is the gate.
+        run: npm run test:coverage
+
+      - name: 🏗️ Build
+        run: npm run build
+
+      - name: 🛡️ Audit
+        # The app ships zero runtime dependencies, so only dev tooling could
+        # ever flag here.
+        run: npm audit --omit=dev --audit-level=high

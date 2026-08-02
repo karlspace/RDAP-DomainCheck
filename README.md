@@ -180,14 +180,22 @@ eigener Implementierungen.
 
 | Workflow                                                         | Auslöser                                         | Was passiert                                                                                                                             |
 | ---------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| [`pr.yml`](.github/workflows/pr.yml)                             | Pull Request auf `main`                          | Ruft `nodejs-build.yml` auf: Format, Lint, Typecheck, Tests mit Coverage, Build, `npm audit`                                             |
+| [`pr.yml`](.github/workflows/pr.yml)                             | Pull Request auf `main`                          | Format, Lint, Typecheck, Tests mit Coverage, Build, `npm audit` — bewusst inline, siehe unten                                            |
 | [`release.yml`](.github/workflows/release.yml)                   | Push auf `main`, manuell                         | Dieselbe Validierung, danach `modules-semantic-release.yml` — Version und `CHANGELOG.md` entstehen ab jetzt aus den Conventional Commits |
 | [`deploy-pages.yml`](.github/workflows/deploy-pages.yml)         | Quellcode-Push, abgeschlossener Release, manuell | Prüft und baut, veröffentlicht `dist/` per OIDC nach GitHub Pages                                                                        |
 | [`ai-issue-summary.yml`](.github/workflows/ai-issue-summary.yml) | Neues Issue oder PR                              | Ruft `modules-ai-issue-summary.yml` für die Triage-Zusammenfassung auf                                                                   |
 
-Pages-Deployment ist bewusst selbst implementiert: Die gemeinsame Bibliothek enthält kein
-Pages-Modul, und der Zwei-Job-Split Build → Deploy mit OIDC entspricht dem Muster der übrigen
-Pages-Repositories.
+Zwei Workflows sind bewusst selbst implementiert:
+
+- **Pages-Deployment** — die gemeinsame Bibliothek enthält kein Pages-Modul, und der
+  Zwei-Job-Split Build → Deploy mit OIDC entspricht dem Muster der übrigen Pages-Repositories.
+- **PR-Validierung** — `nodejs-build.yml` enthält einen Code-Quality-Job und verlangt vom
+  Aufrufer daher `pull-requests: write`. GitHub prüft die Berechtigungen jeder aufgerufenen
+  Workflow beim Anlegen des Runs, noch bevor `if:`-Bedingungen ausgewertet werden — die
+  Anforderung gilt also auch bei abgeschaltetem Job. Bei Dependabot-Runs ist der `GITHUB_TOKEN`
+  read-only, diese Grenze lässt sich nicht anheben, und jeder Dependabot-PR endete in
+  `startup_failure`. Aus demselben Grund validieren auch die Schwester-Repositories ihre Pull
+  Requests inline.
 
 Der Qualitäts-Gate läuft absichtlich auch in `deploy-pages.yml`. `release.yml` ignoriert
 `.github/**`, eine reine Workflow-Änderung käme sonst ungeprüft auf Pages — und hier _ist_ die
