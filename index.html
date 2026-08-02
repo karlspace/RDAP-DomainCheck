@@ -26,36 +26,39 @@
 
     <div class="shell">
       <header class="masthead">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <div class="brand-text">
-            <p class="eyebrow" data-i18n="app.eyebrow">RDAP · direkt bei der Registry</p>
-            <h1 data-i18n="app.title">Welcher Name ist noch frei?</h1>
+        <div class="masthead-bar">
+          <p class="eyebrow" data-i18n="app.eyebrow">RDAP · direkt bei der Registry</p>
+
+          <div class="masthead-actions">
+            <div
+              class="segmented"
+              role="group"
+              id="themeSwitch"
+              aria-label="Darstellung"
+              data-i18n-label="nav.theme"
+            >
+              <button type="button" data-theme-value="system" data-i18n="theme.system">
+                System
+              </button>
+              <button type="button" data-theme-value="light" data-i18n="theme.light">Hell</button>
+              <button type="button" data-theme-value="dark" data-i18n="theme.dark">Dunkel</button>
+            </div>
+            <div
+              class="segmented"
+              role="group"
+              id="localeSwitch"
+              aria-label="Sprache"
+              data-i18n-label="nav.language"
+            >
+              <button type="button" data-locale-value="de">DE</button>
+              <button type="button" data-locale-value="en">EN</button>
+            </div>
           </div>
         </div>
 
-        <div class="masthead-actions">
-          <div
-            class="segmented"
-            role="group"
-            id="themeSwitch"
-            aria-label="Darstellung"
-            data-i18n-label="nav.theme"
-          >
-            <button type="button" data-theme-value="system" data-i18n="theme.system">System</button>
-            <button type="button" data-theme-value="light" data-i18n="theme.light">Hell</button>
-            <button type="button" data-theme-value="dark" data-i18n="theme.dark">Dunkel</button>
-          </div>
-          <div
-            class="segmented"
-            role="group"
-            id="localeSwitch"
-            aria-label="Sprache"
-            data-i18n-label="nav.language"
-          >
-            <button type="button" data-locale-value="de">DE</button>
-            <button type="button" data-locale-value="en">EN</button>
-          </div>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <h1 data-i18n="app.title">Welcher Name ist noch frei?</h1>
         </div>
       </header>
 

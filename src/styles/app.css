@@ -98,6 +98,16 @@
   box-sizing: border-box;
 }
 
+/*
+ * The `hidden` attribute only works through the user-agent's `display: none`,
+ * which ANY author rule setting `display` silently defeats — `.btn` did exactly
+ * that, leaving the cancel button on screen permanently. The unit test passed
+ * throughout because it asserted the attribute, not the rendered result.
+ */
+[hidden] {
+  display: none !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -159,33 +169,39 @@ a:hover {
 
 /* ------------------------------------------------------------------ header */
 
-.masthead {
+/* Chrome sits on its own quiet line above, so the headline gets the full
+   measure instead of shoving the switches onto a row of their own. */
+.masthead-bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: clamp(14px, 1.5vw, 22px);
+  /* Sets the em context for both the headline and the mark, so the mark scales
+     with the type instead of shrinking beside it. */
+  font-size: clamp(1.9rem, 1.1rem + 3.2vw, 3.1rem);
 }
 
 /* The mark is the result tape in miniature: three rails, one of them live. */
 .brand-mark {
-  width: 21px;
-  height: 34px;
+  width: 0.42em;
+  height: 0.8em;
   flex: none;
   background:
-    linear-gradient(var(--signal) 0 0) 0 0 / var(--rail-width) 100% no-repeat,
-    linear-gradient(var(--edge-strong) 0 0) 9px 0 / var(--rail-width) 100% no-repeat,
-    linear-gradient(var(--edge-strong) 0 0) 18px 0 / var(--rail-width) 100% no-repeat;
+    linear-gradient(var(--signal) 0 0) 0 0 / 21% 100% no-repeat,
+    linear-gradient(var(--edge-strong) 0 0) 50% 0 / 21% 100% no-repeat,
+    linear-gradient(var(--edge-strong) 0 0) 100% 0 / 21% 100% no-repeat;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
+  margin: 0;
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -195,7 +211,7 @@ a:hover {
 
 /* The one typographic moment: the width axis pushed wide, weight pushed heavy. */
 h1 {
-  font-size: clamp(1.9rem, 1.1rem + 3.2vw, 3.1rem);
+  font-size: 1em;
   font-stretch: 115%;
   letter-spacing: -0.035em;
   line-height: 0.94;
@@ -203,8 +219,8 @@ h1 {
 }
 
 .lead {
-  max-width: 60ch;
-  margin: 26px 0 0;
+  max-width: 58ch;
+  margin: 22px 0 0;
   font-size: 16px;
   color: var(--ink-muted);
   text-wrap: pretty;
@@ -533,12 +549,18 @@ textarea::placeholder,
   cursor: not-allowed;
 }
 
+/*
+ * Ink, not signal. Filled with the accent this was the largest saturated area
+ * on the page — louder than any result it was meant to produce, which breaks
+ * the one rule the design is built on. Neutral fill keeps it unmistakably
+ * primary and leaves the green to mean exactly one thing.
+ */
 .btn-primary {
-  background: var(--signal);
-  color: light-dark(#ffffff, #071a12);
+  background: var(--ink);
+  color: var(--void);
 }
 .btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: light-dark(#2b2e47, #ffffff);
 }
 
 .btn-ghost {
@@ -625,6 +647,9 @@ textarea::placeholder,
 
 .results-table {
   width: 100%;
+  /* Below this the table scrolls inside .table-scroll rather than compressing
+     the domain column into a column of single letters. */
+  min-width: 330px;
   border-collapse: collapse;
   font-size: 13px;
 }
@@ -739,7 +764,10 @@ textarea::placeholder,
   font-weight: 600;
   font-stretch: 88%;
   letter-spacing: -0.005em;
-  overflow-wrap: anywhere;
+  /* `break-word`, never `anywhere`: the latter feeds into the column's
+     min-content width, letting a narrow screen collapse the cell and break the
+     name one character per line. */
+  overflow-wrap: break-word;
 }
 .result-row[data-status='available'] .domain-name {
   color: var(--signal);
@@ -971,13 +999,27 @@ textarea::placeholder,
     flex: 1 1 120px;
     width: auto;
   }
+  /* Buttons carry `white-space: nowrap`, so `flex: 1` alone cannot shrink them
+     past their label and the row overflowed the viewport. Let the row wrap and
+     give the primary action a line of its own. */
+  .actions {
+    flex-wrap: wrap;
+  }
   .actions .btn {
-    flex: 1;
+    flex: 1 1 auto;
     justify-content: center;
   }
+  .actions .btn-primary {
+    flex: 1 0 100%;
+  }
+  /* `space-between` across the full width flung the labels to the edges; equal
+     shares read as one control instead of three stranded words. */
   .segmented {
     width: 100%;
-    justify-content: space-between;
+  }
+  .segmented button {
+    flex: 1;
+    justify-content: center;
   }
 }
 

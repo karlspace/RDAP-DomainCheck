@@ -115,6 +115,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('stylesheet guarantees', () => {
+  // happy-dom does not load app.css, so computed layout cannot be asserted
+  // here. This checks the rule itself instead, because its absence is what let
+  // a permanently visible cancel button ship: `hidden` works only through the
+  // user-agent's `display: none`, and `.btn { display: inline-flex }` beat it.
+  const css = readFileSync(resolve(process.cwd(), 'src/styles/app.css'), 'utf8');
+
+  it('forces hidden elements to stay hidden', () => {
+    expect(css).toMatch(/\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+  });
+
+  it('reserves the signal colour for availability', () => {
+    // The primary button once used --signal as a fill, making it the largest
+    // saturated area on the page and drowning out the results.
+    const primary = /\.btn-primary\s*\{[^}]*\}/.exec(css)?.[0] ?? '';
+    expect(primary).not.toContain('var(--signal)');
+  });
+});
+
 describe('App boot', () => {
   it('resolves every element it needs from the shipped index.html', () => {
     stubFetch();
