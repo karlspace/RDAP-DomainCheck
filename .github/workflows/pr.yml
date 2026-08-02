@@ -6,6 +6,13 @@
 # conflict), so the reusable workflow applies without the workarounds some
 # sibling repos need.
 #
+# No `secrets: inherit` here, unlike release.yml. Dependabot-triggered runs
+# resolve secrets from a separate store that this event cannot reach, and the
+# resolution happens before any job starts — which surfaced as a startup_failure
+# on every Dependabot PR. Every secret nodejs-build.yml declares is optional
+# (the SonarQube step skips itself when its token is absent), so dropping the
+# line costs nothing here.
+#
 # Pipeline: format check → lint → typecheck → tests (with coverage gate) →
 #           build → npm audit
 # =============================================================================
@@ -51,4 +58,3 @@ jobs:
       # flag, and that must not block a PR on a transitive advisory.
       audit-production-only: true
       upload-artifacts: false
-    secrets: inherit
