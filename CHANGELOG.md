@@ -1,0 +1,70 @@
+# Changelog
+
+Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
+
+Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
+die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
+
+## [1.0.0] — 2026-08-02
+
+Erste produktive Version. Der Prototyp (eine `index.html` mit Inline-Skript) wurde vollständig
+neu aufgebaut.
+
+### Hinzugefügt
+
+- **TLD-Matrix** — einen Namen gegen viele Endungen prüfen, mit Vorlagen für DACH, Global, EU,
+  Tech und Shop.
+- **RDAP-Details je Domain** — Registrar, IANA-Registrar-ID, Registrierungs-, Änderungs- und
+  Ablaufdatum, EPP-Status, Nameserver, DNSSEC und Registry-Handle in einer aufklappbaren Zeile.
+- **Aussagekraft je Ergebnis** (verbindlich / Hinweis / keine Aussage) statt eines undifferenzierten
+  „Unklar".
+- **Warnhinweise** für vermutete Subdomains, IDN-Umwandlung, manuell ergänzte Registries,
+  veraltete Bootstrap-Daten und unerwartete Antwortinhalte.
+- **Hinweis „wird frei"** für Domains in `pendingDelete` oder `redemptionPeriod`.
+- **Filter und Suche** über Status, Domain und Registrar.
+- **Export als CSV und JSON** (Download statt nur Zwischenablage) sowie „freie Domains kopieren".
+- **Abbrechen** laufender Prüfungen.
+- **Deutsch und Englisch** umschaltbar, Vorauswahl nach Browsersprache.
+- **Hell/Dunkel/System-Theme**, folgt Systemwechseln live.
+- **Zustandserhalt** für Eingaben, Sprache und Theme über `localStorage`.
+- **IDN-Unterstützung** — `münchen.de` wird als `xn--mnchen-3ya.de` abgefragt, angezeigt bleibt die
+  eingegebene Form.
+- **Nachvollziehbarer Bootstrap-Status** inklusive Hinweis auf zwischengespeicherte Daten.
+- **282 Unit-Tests** bei 94 % Statement-Coverage, CI und automatisches Pages-Deployment.
+
+### Geändert
+
+- **Architektur** — von einer Datei zu getrennten, testbaren Modulen in TypeScript; die
+  Verfügbarkeits-Policy liegt isoliert in `src/core/classify.ts`.
+- **Registry-Zuordnung** per Longest-Suffix-Match nach RFC 7484 statt Auswertung nur des letzten
+  Labels. `acme.co.uk` trifft dadurch die richtige Registry.
+- **Bootstrap-Registry** wird 24 Stunden zwischengespeichert; fällt IANA aus, arbeitet das Werkzeug
+  mit den zwischengespeicherten Daten weiter und weist darauf hin.
+- **Manuelle Registry-Ergänzungen** füllen jetzt nur noch Lücken. Sobald IANA einen Suffix führt,
+  gewinnt IANA — eine veraltete URL kann sich so nicht dauerhaft festsetzen.
+- **Nebenläufigkeit** mit globalem Limit _und_ Limit je Registry, statt eines einzelnen globalen
+  Werts. Gemischte Listen laufen dadurch schneller und lösen seltener Rate-Limits aus.
+- **Domain-Erkennung** akzeptiert URLs, E-Mail-Adressen, Wildcards und Aufzählungszeichen und meldet
+  nicht verwertbare Einträge, statt sie stillschweigend zu verwerfen.
+
+### Behoben
+
+- **XSS-Risiko:** Registry-Daten und Registry-URLs wurden per `innerHTML` in die Seite geschrieben.
+  Eine manipulierte Bootstrap-Datei hätte über eine `javascript:`-URL Code ausführen können.
+- **Fehlende Fehlerbehandlung** bei HTTP 429, 5xx und Zeitüberschreitungen — jetzt mit begrenzten
+  Wiederholungen, Backoff mit Jitter und Auswertung von `Retry-After`.
+- **Falsch positives „frei"** bei Subdomain-Eingaben wird jetzt als Hinweis gekennzeichnet.
+- **Formel-Injection** im CSV-Export (CWE-1236).
+
+### Sicherheit
+
+- Strikte Content-Security-Policy im Produktions-Build inklusive Trusted Types.
+- **Google Fonts entfernt.** Die Einbindung per `@import` von `fonts.googleapis.com` übertrug die
+  IP-Adresse jedes Besuchers ohne Einwilligung an Google (LG München I, 3 O 17493/20). Ersetzt durch
+  den System-Font-Stack.
+- `referrer: no-referrer` und `credentials: 'omit'` für alle Anfragen.
+- Registry-URLs werden ausschließlich mit `https:` akzeptiert; eingebettete Zugangsdaten werden
+  abgelehnt.
+- Größen- und Längenbegrenzungen für alle Fremddaten.
+
+[1.0.0]: https://github.com/karlspace/RDAP-DomainCheck/releases/tag/v1.0.0
