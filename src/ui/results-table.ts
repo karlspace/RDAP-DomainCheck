@@ -25,6 +25,7 @@ const STATUS_KEYS: Record<RowStatus, TranslationKey> = {
   'rate-limited': 'status.rate-limited',
   blocked: 'status.blocked',
   unreachable: 'status.unreachable',
+  'browser-blocked': 'status.browser-blocked',
   invalid: 'status.invalid',
   'registry-error': 'status.registry-error',
   cancelled: 'status.cancelled',
@@ -34,6 +35,7 @@ const WARNING_KEYS: Record<WarningCode, TranslationKey> = {
   'possible-subdomain': 'warning.possible-subdomain',
   'idn-converted': 'warning.idn-converted',
   'manual-registry': 'warning.manual-registry',
+  'registry-blocks-browser': 'warning.registry-blocks-browser',
   'stale-bootstrap': 'warning.stale-bootstrap',
   'unexpected-payload': 'warning.unexpected-payload',
 };
@@ -208,6 +210,8 @@ class RowView {
 
     for (const warning of result.warnings) {
       if (warning === 'idn-converted') continue; // already visible as the ascii line
+      // The blocked-registry case gets a link instead; a "!" would be noise.
+      if (warning === 'registry-blocks-browser') continue;
       badges.push(
         el('span', {
           className: 'badge badge-warn',
@@ -215,6 +219,20 @@ class RowView {
           attrs: { title: t(WARNING_KEYS[warning]) },
         }),
       );
+    }
+
+    // A row the tool cannot answer must carry its own way out. Burying the
+    // link one disclosure click deep is what made "unreachable" read as
+    // "broken" rather than "open this".
+    const needsManualCheck = result.status === 'browser-blocked' || result.status === 'unreachable';
+    if (needsManualCheck && result.queryUrl !== undefined) {
+      const link = el('a', {
+        className: 'inline-link',
+        attrs: { title: t('detail.openJson') },
+      });
+      link.append(t('detail.openJson'), icon(IconPaths.external, { size: 12 }));
+      setSafeHref(link, result.queryUrl);
+      badges.push(link);
     }
 
     return el('div', { className: 'status-wrap' }, [pill, ...badges]);

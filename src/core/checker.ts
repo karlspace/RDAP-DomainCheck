@@ -8,7 +8,7 @@ import type {
 import { findService } from './bootstrap.js';
 import { classifyResponse } from './classify.js';
 import { looksLikeSubdomain } from './domain.js';
-import type { RdapClient } from './rdap.js';
+import { RdapClient } from './rdap.js';
 import { runPool } from './pool.js';
 
 /**
@@ -61,6 +61,23 @@ export async function checkDomain(
 
   const isSubdomain = looksLikeSubdomain(domain.ascii, service.suffix);
   if (isSubdomain) baseWarnings.push('possible-subdomain');
+
+  // Skip the request entirely for a registry we know rejects cross-origin
+  // reads. Sending it would spend a full timeout-and-retry cycle per domain to
+  // arrive at an opaque failure indistinguishable from the network being down,
+  // and would report it as "unreachable" — which reads as a broken tool even
+  // though the registry is fine and its URL works in a browser tab.
+  if (service.browserBlocked) {
+    return {
+      domain,
+      suffix: service.suffix,
+      status: 'browser-blocked',
+      confidence: 'unknown',
+      registry: service.urls[0],
+      queryUrl: RdapClient.buildQueryUrl(service.urls[0] ?? '', domain.ascii),
+      warnings: [...baseWarnings, 'registry-blocks-browser'],
+    };
+  }
 
   const response = await client.lookupDomain(domain.ascii, service, signal);
   const classification = classifyResponse(response);

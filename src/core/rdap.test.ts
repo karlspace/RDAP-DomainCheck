@@ -6,12 +6,14 @@ const SERVICE: BootstrapService = {
   suffix: 'com',
   urls: ['https://rdap.example.com/v1'],
   origin: 'iana',
+  browserBlocked: false,
 };
 
 const FAILOVER_SERVICE: BootstrapService = {
   suffix: 'com',
   urls: ['https://primary.example.com', 'https://secondary.example.com'],
   origin: 'iana',
+  browserBlocked: false,
 };
 
 const DOMAIN_BODY = { objectClassName: 'domain', ldhName: 'acme.com' };

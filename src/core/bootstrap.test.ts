@@ -123,6 +123,14 @@ describe('loadBootstrapRegistry', () => {
     // `.de` is missing from the fixture, so the override fills the gap.
     expect(registry.manualCount).toBe(1);
     expect(registry.services.get('de')?.origin).toBe('manual');
+    // DENIC sends no CORS header; the flag is what keeps the UI honest about it.
+    expect(registry.services.get('de')?.browserBlocked).toBe(true);
+  });
+
+  it('marks IANA services as browser-usable', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(PAYLOAD));
+    const registry = await loadBootstrapRegistry({ fetchImpl, now: () => 1000 });
+    expect(registry.services.get('com')?.browserBlocked).toBe(false);
   });
 
   it('lets IANA win over a manual override for the same suffix', async () => {

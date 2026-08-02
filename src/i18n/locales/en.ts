@@ -93,6 +93,7 @@ export const en: Record<TranslationKey, string> = {
   'status.rate-limited': 'Rate limited',
   'status.blocked': 'Refused',
   'status.unreachable': 'Unreachable',
+  'status.browser-blocked': 'Check manually',
   'status.invalid': 'Invalid query',
   'status.registry-error': 'Registry error',
   'status.cancelled': 'Cancelled',
@@ -109,6 +110,8 @@ export const en: Record<TranslationKey, string> = {
     'Looks like a subdomain — the registry answer then says nothing about a registrable domain',
   'warning.idn-converted': 'IDN domain; the punycode form was queried',
   'warning.manual-registry': 'RDAP server comes from the manual override list, not from IANA',
+  'warning.registry-blocks-browser':
+    'This registry does not allow browser queries (no CORS header). Its answer is correct but unreadable here — check it directly via “Open RDAP JSON”.',
   'warning.stale-bootstrap': 'Based on cached IANA data',
   'warning.unexpected-payload': 'Registry responded with unexpected content',
 
@@ -121,7 +124,7 @@ export const en: Record<TranslationKey, string> = {
   'footer.privacy':
     'All queries go straight from your browser to the respective registry. There is no backend, no tracking and no analytics.',
   'footer.cors':
-    'Registries without CORS headers show up as “Unreachable” — the answer can still be verified via the JSON link.',
+    'A few registries — DENIC for .de among them — do not allow browser queries. Those domains are marked “Check manually” and linked straight to the RDAP answer.',
   'footer.source': 'Source code',
   'footer.version': 'Version {version}',
 };

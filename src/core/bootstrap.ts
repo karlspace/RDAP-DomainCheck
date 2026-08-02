@@ -9,6 +9,16 @@ export const BOOTSTRAP_TTL_MS = 24 * 60 * 60 * 1000;
 
 const FETCH_TIMEOUT_MS = 10_000;
 
+export interface ManualOverride {
+  readonly urls: readonly string[];
+  /**
+   * Set when the registry answers RDAP but omits `Access-Control-Allow-Origin`.
+   * Such an entry is still worth having: it names the right registry and yields
+   * a working link, even though the lookup itself has to happen in a tab.
+   */
+  readonly browserBlocked?: boolean;
+}
+
 /**
  * TLDs that operate a public RDAP service but are (still) missing from IANA's
  * bootstrap file.
@@ -17,14 +27,24 @@ const FETCH_TIMEOUT_MS = 10_000;
  * IANA wins, so this table cannot silently pin a stale URL once upstream
  * catches up.
  *
- * Before adding an entry, verify it against the registry's own documentation —
- * `curl -I https://rdap.<registry>/domain/<known-domain>` — and check that the
- * service answers unauthenticated GETs with CORS headers. Registries offering
- * RDAP only behind authentication (e.g. SWITCH for `.ch`) do not fit this model.
+ * Before adding an entry, verify it against the registry's own documentation
+ * and check the CORS header, because that decides whether a browser can use it:
+ *
+ *     curl -sD - -o /dev/null -H 'Origin: https://example.org' \
+ *       https://rdap.<registry>/domain/<known-domain> | grep -i access-control
+ *
+ * No header means `browserBlocked: true`. Registries offering RDAP only behind
+ * authentication (e.g. SWITCH for `.ch`) do not fit this model at all.
  */
-export const MANUAL_OVERRIDES: Readonly<Record<string, readonly string[]>> = {
+export const MANUAL_OVERRIDES: Readonly<Record<string, ManualOverride>> = {
   // DENIC RDAP service — https://www.denic.de/en/service/whois-service/rdap-service
-  de: ['https://rdap.denic.de/'],
+  // Answers 404/200 correctly but sends no Access-Control-Allow-Origin on
+  // either, unlike every gTLD registry and every other ccTLD checked.
+  // Verified 2026-08-02.
+  de: {
+    urls: ['https://rdap.denic.de/'],
+    browserBlocked: true,
+  },
 };
 
 /**
@@ -96,7 +116,7 @@ export function parseBootstrapPayload(payload: unknown): {
     for (const rawSuffix of rawSuffixes) {
       const suffix = normalizeSuffix(rawSuffix);
       if (suffix === null) continue;
-      services.set(suffix, { suffix, urls, origin: 'iana' });
+      services.set(suffix, { suffix, urls, origin: 'iana', browserBlocked: false });
     }
   }
 
@@ -112,14 +132,21 @@ export function parseBootstrapPayload(payload: unknown): {
 function applyManualOverrides(services: Map<string, BootstrapService>): number {
   let added = 0;
 
-  for (const [rawSuffix, rawUrls] of Object.entries(MANUAL_OVERRIDES)) {
+  for (const [rawSuffix, override] of Object.entries(MANUAL_OVERRIDES)) {
     const suffix = normalizeSuffix(rawSuffix);
     if (suffix === null || services.has(suffix)) continue;
 
-    const urls = rawUrls.map(normalizeRegistryUrl).filter((url): url is string => url !== null);
+    const urls = override.urls
+      .map(normalizeRegistryUrl)
+      .filter((url): url is string => url !== null);
     if (urls.length === 0) continue;
 
-    services.set(suffix, { suffix, urls, origin: 'manual' });
+    services.set(suffix, {
+      suffix,
+      urls,
+      origin: 'manual',
+      browserBlocked: override.browserBlocked ?? false,
+    });
     added += 1;
   }
 
@@ -179,7 +206,8 @@ function fromCache(cached: CachedBootstrap, stale: boolean): BootstrapRegistry |
     if (typeof suffix !== 'string' || !Array.isArray(urls)) continue;
     const safeUrls = urls.map(normalizeRegistryUrl).filter((url): url is string => url !== null);
     if (safeUrls.length === 0) continue;
-    services.set(suffix, { suffix, urls: safeUrls, origin: 'iana' });
+    // Only IANA entries are cached; the manual table is re-applied from source.
+    services.set(suffix, { suffix, urls: safeUrls, origin: 'iana', browserBlocked: false });
   }
   if (services.size === 0) return null;
   return buildRegistry(services, cached.publication, cached.fetchedAt, stale);

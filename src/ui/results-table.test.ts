@@ -196,6 +196,33 @@ describe('ResultsTable', () => {
     expect(detail?.hasAttribute('hidden')).toBe(true);
   });
 
+  it('surfaces the direct link on a row it cannot answer itself', () => {
+    // Without this the only way out was one disclosure click deep, which made
+    // the row read as a broken tool rather than "open this".
+    const { table, body } = makeTable();
+    table.setResults([
+      result({
+        status: 'browser-blocked',
+        confidence: 'unknown',
+        warnings: ['registry-blocks-browser'],
+        queryUrl: 'https://rdap.denic.de/domain/acme.de',
+      }),
+    ]);
+
+    const link = body.querySelector<HTMLAnchorElement>('.cell-status .inline-link');
+    expect(link?.href).toBe('https://rdap.denic.de/domain/acme.de');
+    expect(link?.rel).toContain('noopener');
+    expect(body.querySelector('.pill')?.textContent).toContain('Manuell prüfen');
+    // The link replaces the generic "!" badge for this warning.
+    expect(body.querySelector('.cell-status .badge-warn')).toBeNull();
+  });
+
+  it('offers no direct link on a conclusive row', () => {
+    const { table, body } = makeTable();
+    table.setResults([result({ status: 'available', queryUrl: 'https://rdap.example/x' })]);
+    expect(body.querySelector('.inline-link')).toBeNull();
+  });
+
   it('does not link to a non-https RDAP URL', () => {
     const { table, body } = makeTable();
     table.setResults([result({ queryUrl: 'javascript:alert(1)' })]);

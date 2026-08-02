@@ -61,7 +61,8 @@ Konkret heißt das für dieses Tool:
 | `403` / `451`                        | Abgelehnt         | keine Aussage |
 | `429` (nach Retries)                 | Rate-Limit        | keine Aussage |
 | `5xx`                                | Registry-Fehler   | keine Aussage |
-| Netzwerk-/CORS-Fehler                | Nicht erreichbar  | keine Aussage |
+| Netzwerkfehler / Timeout             | Nicht erreichbar  | keine Aussage |
+| Registry ohne CORS (bekannt)         | Manuell prüfen    | keine Aussage |
 
 Die Regel dahinter steht vollständig in [`src/core/classify.ts`](src/core/classify.ts) und lautet:
 **bei Zweifel niemals „frei" behaupten.** Ein falsches „vergeben" kostet eine manuelle Nachprüfung,
@@ -76,11 +77,19 @@ auf **Hinweis** herabgestuft — statt es zu verschweigen oder die Zeile abzuleh
 
 ## Bekannte Grenzen
 
-- **CORS.** Die großen gTLD-Registries (Verisign, PIR, Identity Digital …) senden
-  `Access-Control-Allow-Origin: *`, wie es das ICANN RDAP Response Profile verlangt. Manche
-  ccTLD-Registries tun das nicht — diese Domains erscheinen als _Nicht erreichbar_, die Antwort
-  lässt sich aber über den JSON-Link je Zeile manuell prüfen. Ohne Backend ist das nicht lösbar,
-  und ein Backend würde die Eingaben der Nutzer über einen fremden Server leiten.
+- **CORS — betrifft `.de`.** Ein Browser darf eine Antwort nur lesen, wenn die Registry
+  `Access-Control-Allow-Origin` sendet. Alle geprüften gTLD-Registries tun das (ICANN RDAP
+  Response Profile), ebenso `.fr`, `.nl`, `.uk` und `.dev`. **DENIC sendet den Header nicht** —
+  weder bei `200` noch bei `404`. Die Antwort ist korrekt, nur für JavaScript unlesbar; per
+  `curl` oder im Browser-Tab funktioniert dieselbe URL einwandfrei.
+
+  Da JavaScript eine CORS-Ablehnung nicht von einem echten Netzwerkfehler unterscheiden kann,
+  ist das in [`MANUAL_OVERRIDES`](src/core/bootstrap.ts) hinterlegt statt geraten. Solche
+  Domains werden gar nicht erst abgefragt — das spart pro Domain einen kompletten
+  Timeout-und-Retry-Zyklus — und erscheinen als _Manuell prüfen_ mit direktem Link auf die
+  RDAP-Antwort. Ohne Backend ist mehr nicht möglich, und ein Backend würde die Eingaben der
+  Nutzer über einen fremden Server leiten.
+
 - **Lücken in IANA's `dns.json`.** Manche Registries betreiben RDAP, sind dort aber nicht
   eingetragen. Siehe [Manuelle Ergänzungen](#manuelle-ergänzungen).
 - **„Frei" ≠ „registrierbar".** Premium-, Sperr- und Markenschutzlisten sind über RDAP nicht
@@ -94,20 +103,24 @@ auf **Hinweis** herabgestuft — statt es zu verschweigen oder die Zeile abzuleh
 Bootstrap-Datei. Einträge greifen **nur**, wenn IANA den Suffix nicht kennt — sobald er dort
 auftaucht, gewinnt IANA automatisch.
 
-| TLD   | RDAP-Server              | Quelle                                                                           |
-| ----- | ------------------------ | -------------------------------------------------------------------------------- |
-| `.de` | `https://rdap.denic.de/` | [DENIC RDAP-Service](https://www.denic.de/en/service/whois-service/rdap-service) |
+| TLD   | RDAP-Server              | Im Browser nutzbar | Quelle                                                                           |
+| ----- | ------------------------ | ------------------ | -------------------------------------------------------------------------------- |
+| `.de` | `https://rdap.denic.de/` | nein — kein CORS   | [DENIC RDAP-Service](https://www.denic.de/en/service/whois-service/rdap-service) |
 
 **Vor dem Ergänzen weiterer TLDs — nicht raten:**
 
 ```bash
-curl -sI -H 'Accept: application/rdap+json' \
-  https://rdap.<registry>/domain/<bekannte-domain> | head -20
+curl -sD - -o /dev/null \
+  -H 'Origin: https://example.org' \
+  -H 'Accept: application/rdap+json' \
+  https://rdap.<registry>/domain/<bekannte-domain> | grep -i access-control
 ```
 
-Der Dienst muss (a) unauthentifiziert antworten, (b) `Access-Control-Allow-Origin` senden und
-(c) über HTTPS laufen. Registries mit ausschließlich authentifiziertem RDAP-Zugang (z. B. SWITCH
-für `.ch`) passen nicht in dieses Modell. Nicht-HTTPS-URLs werden vom Code grundsätzlich verworfen.
+Der Dienst muss (a) unauthentifiziert antworten und (b) über HTTPS laufen; Nicht-HTTPS-URLs
+verwirft der Code grundsätzlich. Kommt (c) **kein** `Access-Control-Allow-Origin` zurück, gehört
+`browserBlocked: true` an den Eintrag — der Test oben ist genau der, mit dem `.de` aufgefallen
+ist. Registries mit ausschließlich authentifiziertem RDAP-Zugang (z. B. SWITCH für `.ch`) passen
+gar nicht in dieses Modell.
 
 ## Sicherheit
 

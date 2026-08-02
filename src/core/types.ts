@@ -22,6 +22,11 @@ export type Availability =
   | 'blocked'
   /** Network failure, CORS rejection, DNS failure or timeout. */
   | 'unreachable'
+  /**
+   * Registry serves RDAP but sends no CORS header, so a browser can never read
+   * the answer. Not an error — the lookup has to happen in a browser tab.
+   */
+  | 'browser-blocked'
   /** Registry rejected the query as malformed (400 / 422). */
   | 'invalid'
   /** Registry answered, but with a server-side failure (5xx) or garbage. */
@@ -45,6 +50,8 @@ export type WarningCode =
   | 'idn-converted'
   /** Registry URL came from our manual override table, not from IANA. */
   | 'manual-registry'
+  /** Registry refuses cross-origin reads, so only a direct visit can answer. */
+  | 'registry-blocks-browser'
   /** The IANA bootstrap data in use is a stale cached copy. */
   | 'stale-bootstrap'
   /** Registry answered 200 but the payload did not look like a domain object. */
@@ -101,6 +108,15 @@ export interface BootstrapService {
   /** HTTPS base URLs, without trailing slash, in registry preference order. */
   readonly urls: readonly string[];
   readonly origin: 'iana' | 'manual';
+  /**
+   * Known to answer without `Access-Control-Allow-Origin`.
+   *
+   * A browser cannot read such a response, and JavaScript cannot tell that
+   * rejection apart from a genuine network error — so it has to be recorded
+   * rather than detected. Querying anyway would burn a full timeout-and-retry
+   * cycle per domain for an answer that can never arrive.
+   */
+  readonly browserBlocked: boolean;
 }
 
 /** The validated, queryable bootstrap registry. */

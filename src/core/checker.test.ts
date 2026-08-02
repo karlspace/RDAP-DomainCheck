@@ -4,8 +4,12 @@ import type { RdapClient, RdapResponse } from './rdap.js';
 import { checkDomain, pendingResult, runCheck, summarize } from './checker.js';
 import { normalizeDomain } from './domain.js';
 
-function service(suffix: string, origin: 'iana' | 'manual' = 'iana'): BootstrapService {
-  return { suffix, urls: [`https://rdap.${suffix}.example`], origin };
+function service(
+  suffix: string,
+  origin: 'iana' | 'manual' = 'iana',
+  browserBlocked = false,
+): BootstrapService {
+  return { suffix, urls: [`https://rdap.${suffix}.example`], origin, browserBlocked };
 }
 
 function registry(
@@ -73,6 +77,33 @@ describe('checkDomain', () => {
     expect(result.status).toBe('available');
     expect(result.confidence).toBe('indicative');
     expect(result.warnings).toContain('possible-subdomain');
+  });
+
+  it('reports a CORS-blocked registry without spending a request', async () => {
+    // DENIC answers RDAP correctly but sends no Access-Control-Allow-Origin,
+    // so a browser can never read it. Trying anyway would burn a full
+    // timeout-and-retry cycle to arrive at an indistinguishable "unreachable".
+    // The spy is held separately rather than read off the client, so the
+    // assertion never touches an unbound method.
+    const lookupDomain = vi.fn();
+    const result = await checkDomain(domain('acme.de'), {
+      registry: registry([service('de', 'manual', true)]),
+      client: { lookupDomain } as unknown as RdapClient,
+    });
+
+    expect(result.status).toBe('browser-blocked');
+    expect(lookupDomain).not.toHaveBeenCalled();
+    expect(result.warnings).toContain('registry-blocks-browser');
+  });
+
+  it('still offers a usable link for a CORS-blocked registry', async () => {
+    const result = await checkDomain(domain('acme.de'), {
+      registry: registry([service('de', 'manual', true)]),
+      client: stubClient({}),
+    });
+
+    expect(result.queryUrl).toBe('https://rdap.de.example/domain/acme.de');
+    expect(result.suffix).toBe('de');
   });
 
   it('flags a manually configured registry', async () => {
