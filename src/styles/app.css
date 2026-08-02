@@ -158,21 +158,36 @@ body::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
+  /*
+   * Light and dark need different strengths and different hues, not one set of
+   * values scaled down.
+   *
+   * On a near-white surface a low-alpha tint moves the pixel by single digits
+   * and is simply not seen — the light values are therefore two to three times
+   * the dark ones, and the gradient centres sit closer to the viewport so more
+   * than the falloff edge is visible.
+   *
+   * Light also drops the jade entirely: a large green wash on a bright surface
+   * starts to read as meaning "available", which is the one thing colour is
+   * allowed to say here. Both light tints come from the housing's blue-violet
+   * family instead. In dark the jade stays, where it reads as instrument
+   * phosphor rather than as a verdict.
+   */
   background:
     radial-gradient(
-      76vw 54vh at 6% -12%,
-      light-dark(rgb(9 122 83 / 10%), rgb(61 220 151 / 14%)),
+      78vw 56vh at 4% -6%,
+      light-dark(rgb(74 90 158 / 20%), rgb(61 220 151 / 14%)),
+      transparent 66%
+    ),
+    radial-gradient(
+      74vw 54vh at 98% -8%,
+      light-dark(rgb(111 82 160 / 26%), rgb(126 98 200 / 26%)),
       transparent 68%
     ),
     radial-gradient(
-      70vw 52vh at 96% -16%,
-      light-dark(rgb(111 82 160 / 13%), rgb(126 98 200 / 26%)),
+      110vw 44vh at 50% 108%,
+      light-dark(rgb(111 82 160 / 14%), rgb(108 86 176 / 15%)),
       transparent 70%
-    ),
-    radial-gradient(
-      100vw 42vh at 50% 112%,
-      light-dark(rgb(111 82 160 / 7%), rgb(108 86 176 / 15%)),
-      transparent 72%
     );
 }
 
@@ -274,7 +289,10 @@ a:hover {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  /* The one step up from --ink-faint: this is the smallest text on the page and
+     it sits in the most strongly tinted corner, where the faint tone drops
+     below AA against the rendered backdrop. */
+  color: var(--ink-muted);
 }
 
 /* The one typographic moment: the width axis pushed wide, weight pushed heavy. */
