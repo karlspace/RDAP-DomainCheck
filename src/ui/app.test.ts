@@ -79,6 +79,23 @@ const byId = (id: string): HTMLElement => requireElement(id, HTMLElement);
 const button = (id: string): HTMLButtonElement => requireElement(id, HTMLButtonElement);
 const field = (id: string): HTMLTextAreaElement => requireElement(id, HTMLTextAreaElement);
 
+/**
+ * Every App instance a test creates, so `afterEach` can dispose all of them.
+ *
+ * Without this a pending input-persist debounce outlives its test, fires during
+ * the next one and writes the discarded instance's textarea value into the
+ * fresh storage. That reproduces only when a test finishes faster than the
+ * debounce window — i.e. on CI, not locally.
+ */
+const started: App[] = [];
+
+function startApp(): App {
+  const app = new App();
+  started.push(app);
+  app.start();
+  return app;
+}
+
 beforeEach(() => {
   installMemoryStorage();
   vi.stubGlobal('matchMedia', () => ({
@@ -93,6 +110,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const app of started) app.dispose();
+  started.length = 0;
   vi.unstubAllGlobals();
 });
 
@@ -100,13 +119,13 @@ describe('App boot', () => {
   it('resolves every element it needs from the shipped index.html', () => {
     stubFetch();
     expect(() => {
-      new App().start();
+      startApp();
     }).not.toThrow();
   });
 
   it('enables the check button once the registry has loaded', async () => {
     stubFetch();
-    new App().start();
+    startApp();
 
     await vi.waitFor(() => {
       expect(button('checkBtn').disabled).toBe(false);
@@ -119,7 +138,7 @@ describe('App boot', () => {
       'fetch',
       vi.fn(() => Promise.reject(new Error('offline'))),
     );
-    new App().start();
+    startApp();
 
     await vi.waitFor(() => {
       expect(byId('bootstrapStatus').dataset['state']).toBe('error');
@@ -131,7 +150,7 @@ describe('App boot', () => {
 describe('App interaction', () => {
   async function bootReady(): Promise<void> {
     stubFetch();
-    new App().start();
+    startApp();
     await vi.waitFor(() => {
       expect(button('checkBtn').disabled).toBe(false);
     });
@@ -247,7 +266,7 @@ describe('App interaction', () => {
     await runAndWait(1);
 
     mountIndexHtml();
-    new App().start();
+    startApp();
     expect(field('domainInput').value).toBe('free.com');
   });
 
@@ -255,6 +274,19 @@ describe('App interaction', () => {
     await bootReady();
     button('checkBtn').click();
     expect(byId('resultsCard').hidden).toBe(true);
+  });
+
+  it('a disposed instance stops writing to storage', async () => {
+    // Regression: a pending persist debounce used to outlive its instance and
+    // write that instance's stale input into the next test's fresh storage,
+    // which failed on CI only, where tests finish inside the debounce window.
+    await bootReady();
+    type('domainInput', 'stale.example');
+
+    started[started.length - 1]?.dispose();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(localStorage.getItem('rdap-domaincheck:input-v1')).toBeNull();
   });
 
   it('cancels a running check and marks the unfinished rows', async () => {
@@ -282,7 +314,7 @@ describe('App interaction', () => {
       }),
     );
 
-    new App().start();
+    startApp();
     await vi.waitFor(() => {
       expect(button('checkBtn').disabled).toBe(false);
     });
@@ -311,7 +343,7 @@ describe('App interaction', () => {
 describe('App exports', () => {
   async function runTwo(): Promise<void> {
     stubFetch();
-    new App().start();
+    startApp();
     await vi.waitFor(() => {
       expect(button('checkBtn').disabled).toBe(false);
     });

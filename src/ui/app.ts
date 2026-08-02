@@ -33,14 +33,28 @@ const TLD_PRESETS: readonly { readonly label: string; readonly tlds: string }[] 
 
 type InputMode = 'list' | 'matrix';
 
-function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): (...args: T) => void {
+interface Debounced<T extends unknown[]> {
+  (...args: T): void;
+  /** Drops a pending call. Without it a discarded owner keeps firing. */
+  cancel(): void;
+}
+
+function debounce<T extends unknown[]>(fn: (...args: T) => void, ms: number): Debounced<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  return (...args: T) => {
+
+  const schedule = (...args: T): void => {
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
       fn(...args);
     }, ms);
   };
+
+  schedule.cancel = (): void => {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = undefined;
+  };
+
+  return schedule;
 }
 
 /**
@@ -82,6 +96,15 @@ export class App {
   readonly #table = new ResultsTable(this.#dom.resultsBody);
   readonly #client = new RdapClient({ perOriginConcurrency: PER_ORIGIN_CONCURRENCY });
 
+  readonly #persistLater = debounce(() => {
+    this.#persistInputs();
+  }, INPUT_PERSIST_DELAY_MS);
+
+  readonly #searchLater = debounce((value: string) => {
+    this.#query = value;
+    this.#applyFilter();
+  }, SEARCH_DEBOUNCE_MS);
+
   #registry: BootstrapRegistry | null = null;
   #results: CheckResult[] = [];
   #mode: InputMode = 'list';
@@ -110,6 +133,21 @@ export class App {
     });
 
     void this.#loadRegistry();
+  }
+
+  /**
+   * Releases the timers and cancels any run in flight.
+   *
+   * A page holds one App for its whole lifetime, so nothing calls this in
+   * production. Tests create many instances, and a debounce still pending on a
+   * discarded instance fires later and writes that instance's stale input into
+   * the *next* one's storage — a cross-test leak that only shows up as a
+   * timing-dependent failure on slower machines.
+   */
+  dispose(): void {
+    this.#persistLater.cancel();
+    this.#searchLater.cancel();
+    this.#abort?.abort();
   }
 
   // ---------------------------------------------------------------- bootstrap
@@ -254,14 +292,10 @@ export class App {
   // ------------------------------------------------------------------- events
 
   #bindEvents(): void {
-    const persist = debounce(() => {
-      this.#persistInputs();
-    }, INPUT_PERSIST_DELAY_MS);
-
     for (const field of [this.#dom.domainInput, this.#dom.matrixNames, this.#dom.matrixTlds]) {
       field.addEventListener('input', () => {
         this.#updateHint();
-        persist();
+        this.#persistLater();
       });
       field.addEventListener('keydown', (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -298,12 +332,8 @@ export class App {
       this.#applyFilter();
     });
 
-    const search = debounce((value: string) => {
-      this.#query = value;
-      this.#applyFilter();
-    }, SEARCH_DEBOUNCE_MS);
     this.#dom.searchInput.addEventListener('input', () => {
-      search(this.#dom.searchInput.value);
+      this.#searchLater(this.#dom.searchInput.value);
     });
 
     this.#dom.themeSwitch.addEventListener('click', (event) => {
