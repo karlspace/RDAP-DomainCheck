@@ -1,6 +1,7 @@
 import type { BootstrapRegistry, CheckResult, NormalizedDomain } from '../core/types.js';
 import type { StatusFilter } from './results-table.js';
 import { MAX_DOMAINS_PER_RUN, expandMatrix, parseDomainList } from '../core/domain.js';
+import { DohResolver } from '../core/dns.js';
 import { RdapClient } from '../core/rdap.js';
 import { StorageKeys, readString, writeString } from '../core/storage.js';
 import { exportFilename, toCsv, toJson, toPlainList } from '../core/export.js';
@@ -76,6 +77,7 @@ export class App {
     matrixTlds: requireElement('matrixTlds', HTMLTextAreaElement),
     tldPresets: requireElement('tldPresets', HTMLElement),
     inputHint: requireElement('inputHint', HTMLElement),
+    dnsFallback: requireElement('dnsFallback', HTMLInputElement),
     checkBtn: requireElement('checkBtn', HTMLButtonElement),
     cancelBtn: requireElement('cancelBtn', HTMLButtonElement),
     clearBtn: requireElement('clearBtn', HTMLButtonElement),
@@ -95,6 +97,7 @@ export class App {
 
   readonly #table = new ResultsTable(this.#dom.resultsBody);
   readonly #client = new RdapClient({ perOriginConcurrency: PER_ORIGIN_CONCURRENCY });
+  readonly #resolver = new DohResolver();
 
   readonly #persistLater = debounce(() => {
     this.#persistInputs();
@@ -219,6 +222,9 @@ export class App {
     this.#dom.domainInput.value = readString(StorageKeys.input) ?? '';
     this.#dom.matrixNames.value = readString(StorageKeys.matrixNames) ?? '';
     this.#dom.matrixTlds.value = readString(StorageKeys.matrixTlds) ?? 'de com net eu';
+    // Off unless explicitly enabled before: it is the one feature that talks to
+    // a party other than the responsible registry.
+    this.#dom.dnsFallback.checked = readString(StorageKeys.dnsFallback) === 'on';
   }
 
   #renderPresets(): void {
@@ -304,6 +310,10 @@ export class App {
         }
       });
     }
+
+    this.#dom.dnsFallback.addEventListener('change', () => {
+      writeString(StorageKeys.dnsFallback, this.#dom.dnsFallback.checked ? 'on' : 'off');
+    });
 
     this.#dom.tabList.addEventListener('click', () => {
       this.#setMode('list');
@@ -415,6 +425,9 @@ export class App {
       await runCheck(domains, {
         registry,
         client: this.#client,
+        // Constructed per run so toggling it off really stops the third-party
+        // requests, rather than leaving a resolver wired up in the background.
+        dns: this.#dom.dnsFallback.checked ? this.#resolver : undefined,
         signal: controller.signal,
         concurrency: GLOBAL_CONCURRENCY,
         onResult: (index, result) => {

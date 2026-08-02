@@ -36,6 +36,7 @@ const WARNING_KEYS: Record<WarningCode, TranslationKey> = {
   'idn-converted': 'warning.idn-converted',
   'manual-registry': 'warning.manual-registry',
   'registry-blocks-browser': 'warning.registry-blocks-browser',
+  'dns-derived': 'warning.dns-derived',
   'stale-bootstrap': 'warning.stale-bootstrap',
   'unexpected-payload': 'warning.unexpected-payload',
 };

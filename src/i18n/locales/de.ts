@@ -109,6 +109,12 @@ export const de = {
     'Sieht nach einer Subdomain aus — die Registry-Antwort gilt dann nicht für eine registrierbare Domain',
   'warning.idn-converted': 'Umlaut-/IDN-Domain, abgefragt wurde die Punycode-Form',
   'warning.manual-registry': 'RDAP-Server stammt aus der manuellen Ergänzungsliste, nicht von IANA',
+  'options.dns': 'DNS-Vorprüfung',
+  'options.dnsHint':
+    'Für Registries, die den Browser blockieren (aktuell .de): Hat eine Domain Nameserver, ist sie zwingend registriert — das erspart die manuelle Prüfung. Umgekehrt gilt es nicht, „frei" wird daraus nie abgeleitet. Dabei geht der Domainname an Cloudflare DNS (1.1.1.1) statt nur an die Registry.',
+
+  'warning.dns-derived':
+    'Aus der DNS-Delegation abgeleitet, nicht von der Registry bestätigt: Die Domain hat Nameserver und ist damit zwingend registriert.',
   'warning.registry-blocks-browser':
     'Diese Registry erlaubt keine Abfrage aus dem Browser (kein CORS-Header). Die Antwort ist korrekt, nur nicht auslesbar — über „RDAP-JSON öffnen" direkt prüfen.',
   'warning.stale-bootstrap': 'Basiert auf zwischengespeicherten IANA-Daten',
@@ -121,7 +127,7 @@ export const de = {
   'export.failed': 'Kopieren fehlgeschlagen',
 
   'footer.privacy':
-    'Alle Abfragen laufen direkt vom Browser zur jeweiligen Registry. Es gibt kein Backend, kein Tracking und keine Analyse.',
+    'Alle Abfragen laufen direkt vom Browser zur jeweiligen Registry. Es gibt kein Backend, kein Tracking und keine Analyse. Einzige Ausnahme ist die optionale DNS-Vorprüfung, die standardmäßig aus ist.',
   'footer.cors':
     'Einzelne Registries — darunter DENIC für .de — erlauben keine Abfragen aus dem Browser. Solche Domains werden als „Manuell prüfen" markiert und direkt zur RDAP-Antwort verlinkt.',
   'footer.source': 'Quellcode',

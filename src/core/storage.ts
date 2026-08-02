@@ -102,4 +102,5 @@ export const StorageKeys = {
   matrixTlds: 'matrix-tlds-v1',
   theme: 'theme-v1',
   locale: 'locale-v1',
+  dnsFallback: 'dns-fallback-v1',
 } as const;

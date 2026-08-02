@@ -441,6 +441,13 @@ textarea::placeholder,
   background: var(--surface-sunken);
 }
 
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .hint {
   margin: 0;
   font-size: 12.5px;
@@ -448,6 +455,25 @@ textarea::placeholder,
 }
 .hint[data-warn='true'] {
   color: var(--warn);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: help;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.toggle input {
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+.toggle:hover {
+  color: var(--text);
 }
 
 .actions {

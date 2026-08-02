@@ -276,6 +276,25 @@ describe('App interaction', () => {
     expect(byId('resultsCard').hidden).toBe(true);
   });
 
+  it('keeps the DNS pre-check off until it is switched on', async () => {
+    await bootReady();
+    const toggle = requireElement('dnsFallback', HTMLInputElement);
+
+    // Off by default: it is the one feature that contacts a party other than
+    // the responsible registry.
+    expect(toggle.checked).toBe(false);
+    expect(localStorage.getItem('rdap-domaincheck:dns-fallback-v1')).toBeNull();
+
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(localStorage.getItem('rdap-domaincheck:dns-fallback-v1')).toBe('on');
+
+    // And it survives a reload.
+    mountIndexHtml();
+    startApp();
+    expect(requireElement('dnsFallback', HTMLInputElement).checked).toBe(true);
+  });
+
   it('a disposed instance stops writing to storage', async () => {
     // Regression: a pending persist debounce used to outlive its instance and
     // write that instance's stale input into the next test's fresh storage,

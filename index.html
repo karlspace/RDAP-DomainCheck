@@ -143,7 +143,18 @@
           </div>
 
           <div class="card-footer">
-            <p class="hint" id="inputHint" aria-live="polite"></p>
+            <div class="footer-left">
+              <p class="hint" id="inputHint" aria-live="polite"></p>
+              <label
+                class="toggle"
+                for="dnsFallback"
+                title="Für Registries, die den Browser blockieren (aktuell .de): Hat eine Domain Nameserver, ist sie zwingend registriert. Dabei geht der Domainname an Cloudflare DNS (1.1.1.1)."
+                data-i18n-title="options.dnsHint"
+              >
+                <input type="checkbox" id="dnsFallback" />
+                <span data-i18n="options.dns">DNS-Vorprüfung</span>
+              </label>
+            </div>
             <div class="actions">
               <button type="button" class="btn btn-ghost" id="clearBtn" data-i18n="action.clear">
                 Leeren
@@ -258,7 +269,8 @@
       <footer class="colophon">
         <p data-i18n="footer.privacy">
           Alle Abfragen laufen direkt vom Browser zur jeweiligen Registry. Es gibt kein Backend,
-          kein Tracking und keine Analyse.
+          kein Tracking und keine Analyse. Einzige Ausnahme ist die optionale DNS-Vorprüfung, die
+          standardmäßig aus ist.
         </p>
         <p data-i18n="footer.cors">
           Einzelne Registries — darunter DENIC für .de — erlauben keine Abfragen aus dem Browser.

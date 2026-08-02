@@ -52,6 +52,8 @@ export type WarningCode =
   | 'manual-registry'
   /** Registry refuses cross-origin reads, so only a direct visit can answer. */
   | 'registry-blocks-browser'
+  /** Verdict inferred from DNS delegation, not confirmed by the registry. */
+  | 'dns-derived'
   /** The IANA bootstrap data in use is a stale cached copy. */
   | 'stale-bootstrap'
   /** Registry answered 200 but the payload did not look like a domain object. */

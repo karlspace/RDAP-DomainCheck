@@ -8,6 +8,7 @@ import type {
 import { findService } from './bootstrap.js';
 import { classifyResponse } from './classify.js';
 import { looksLikeSubdomain } from './domain.js';
+import type { DohResolver } from './dns.js';
 import { RdapClient } from './rdap.js';
 import { runPool } from './pool.js';
 
@@ -33,6 +34,13 @@ export interface CheckOneOptions {
   readonly registry: BootstrapRegistry;
   readonly client: RdapClient;
   readonly signal?: AbortSignal | undefined;
+  /**
+   * Optional DNS fallback for registries that block browser access.
+   *
+   * Opt-in: it sends the queried name to a third-party resolver, which every
+   * other request in this app deliberately avoids.
+   */
+  readonly dns?: DohResolver | undefined;
 }
 
 /** Resolves the registry for one domain, queries it and interprets the answer. */
@@ -68,13 +76,35 @@ export async function checkDomain(
   // and would report it as "unreachable" — which reads as a broken tool even
   // though the registry is fine and its URL works in a browser tab.
   if (service.browserBlocked) {
+    const queryUrl = RdapClient.buildQueryUrl(service.urls[0] ?? '', domain.ascii);
+
+    // A name with NS records is delegated, and only registered names are
+    // delegated — so this direction is sound. The converse is not, which is
+    // why the resolver has no way to report "not delegated": everything else
+    // falls through to the manual-check row below.
+    if (options.dns !== undefined) {
+      const delegation = await options.dns.lookupDelegation(domain.ascii, signal);
+      if (delegation.status === 'delegated') {
+        return {
+          domain,
+          suffix: service.suffix,
+          status: 'registered',
+          confidence: 'indicative',
+          registry: service.urls[0],
+          queryUrl,
+          details: { statuses: [], nameservers: delegation.nameservers },
+          warnings: [...baseWarnings, 'registry-blocks-browser', 'dns-derived'],
+        };
+      }
+    }
+
     return {
       domain,
       suffix: service.suffix,
       status: 'browser-blocked',
       confidence: 'unknown',
       registry: service.urls[0],
-      queryUrl: RdapClient.buildQueryUrl(service.urls[0] ?? '', domain.ascii),
+      queryUrl,
       warnings: [...baseWarnings, 'registry-blocks-browser'],
     };
   }

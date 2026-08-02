@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { BootstrapRegistry, BootstrapService, CheckResult } from './types.js';
+import type { DohResolver } from './dns.js';
 import type { RdapClient, RdapResponse } from './rdap.js';
 import { checkDomain, pendingResult, runCheck, summarize } from './checker.js';
 import { normalizeDomain } from './domain.js';
@@ -104,6 +105,51 @@ describe('checkDomain', () => {
 
     expect(result.queryUrl).toBe('https://rdap.de.example/domain/acme.de');
     expect(result.suffix).toBe('de');
+  });
+
+  describe('with the DNS fallback enabled', () => {
+    const dnsStub = (status: 'delegated' | 'unknown', nameservers: string[] = []) =>
+      ({
+        lookupDelegation: vi.fn().mockResolvedValue({ status, nameservers, diagnostic: null }),
+      }) as unknown as DohResolver;
+
+    it('resolves a delegated domain to registered', async () => {
+      const result = await checkDomain(domain('acme.de'), {
+        registry: registry([service('de', 'manual', true)]),
+        client: stubClient({}),
+        dns: dnsStub('delegated', ['a.nic.de', 'f.nic.de']),
+      });
+
+      expect(result.status).toBe('registered');
+      // Sound but second-hand: the registry never confirmed it.
+      expect(result.confidence).toBe('indicative');
+      expect(result.warnings).toContain('dns-derived');
+      expect(result.details?.nameservers).toEqual(['a.nic.de', 'f.nic.de']);
+    });
+
+    it('never derives availability from a missing delegation', async () => {
+      const result = await checkDomain(domain('acme.de'), {
+        registry: registry([service('de', 'manual', true)]),
+        client: stubClient({}),
+        dns: dnsStub('unknown'),
+      });
+
+      expect(result.status).toBe('browser-blocked');
+      expect(result.queryUrl).toContain('/domain/acme.de');
+    });
+
+    it('leaves registries that work in the browser untouched', async () => {
+      const dns = dnsStub('delegated', ['ns.example']);
+      const result = await checkDomain(domain('acme.com'), {
+        registry: registry([service('com')]),
+        client: stubClient({ httpStatus: 404 }),
+        dns,
+      });
+
+      // A registry we can query directly must never be second-guessed by DNS.
+      expect(result.status).toBe('available');
+      expect(result.warnings).not.toContain('dns-derived');
+    });
   });
 
   it('flags a manually configured registry', async () => {

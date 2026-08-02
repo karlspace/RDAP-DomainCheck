@@ -79,8 +79,15 @@ behandelt:
 - **Keine Übertragung an Dritte außer der jeweiligen Registry.** Eingegebene Domains verlassen den
   Browser ausschließlich als RDAP-Abfrage an die für die TLD zuständige Registry. Es gibt kein
   Backend, das die Eingaben sehen könnte.
+
+  **Eine Ausnahme, opt-in:** Die abschaltbare DNS-Vorprüfung sendet den Domainnamen an Cloudflare
+  DNS (1.1.1.1), um für browserblockierte Registries wenigstens „vergeben" feststellen zu können.
+  Sie ist standardmäßig aus, der Schalter nennt den Empfänger im Klartext, und die Einstellung
+  wird lokal gespeichert. Ausgeschaltet stellt das Werkzeug keine einzige Anfrage an Cloudflare.
+
 - **Lokale Speicherung** beschränkt sich auf `localStorage` im Browser: letzte Eingabe, Sprache,
-  Theme und der Registry-Cache. Nichts davon verlässt das Gerät.
+  Theme, der Registry-Cache und der Schalterzustand der DNS-Vorprüfung. Nichts davon verlässt das
+  Gerät.
 
 ### Abhängigkeiten
 

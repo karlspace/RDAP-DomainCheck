@@ -110,6 +110,12 @@ export const en: Record<TranslationKey, string> = {
     'Looks like a subdomain — the registry answer then says nothing about a registrable domain',
   'warning.idn-converted': 'IDN domain; the punycode form was queried',
   'warning.manual-registry': 'RDAP server comes from the manual override list, not from IANA',
+  'options.dns': 'DNS pre-check',
+  'options.dnsHint':
+    'For registries that block browsers (currently .de): a domain with name servers is necessarily registered, which saves the manual check. The converse does not hold, so “available” is never inferred from it. This sends the domain name to Cloudflare DNS (1.1.1.1) rather than only to the registry.',
+
+  'warning.dns-derived':
+    'Inferred from DNS delegation, not confirmed by the registry: the domain has name servers and is therefore necessarily registered.',
   'warning.registry-blocks-browser':
     'This registry does not allow browser queries (no CORS header). Its answer is correct but unreadable here — check it directly via “Open RDAP JSON”.',
   'warning.stale-bootstrap': 'Based on cached IANA data',
@@ -122,7 +128,7 @@ export const en: Record<TranslationKey, string> = {
   'export.failed': 'Copying failed',
 
   'footer.privacy':
-    'All queries go straight from your browser to the respective registry. There is no backend, no tracking and no analytics.',
+    'All queries go straight from your browser to the respective registry. There is no backend, no tracking and no analytics. The only exception is the optional DNS pre-check, which is off by default.',
   'footer.cors':
     'A few registries — DENIC for .de among them — do not allow browser queries. Those domains are marked “Check manually” and linked straight to the RDAP answer.',
   'footer.source': 'Source code',

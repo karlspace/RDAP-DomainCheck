@@ -87,8 +87,7 @@ auf **Hinweis** herabgestuft — statt es zu verschweigen oder die Zeile abzuleh
   ist das in [`MANUAL_OVERRIDES`](src/core/bootstrap.ts) hinterlegt statt geraten. Solche
   Domains werden gar nicht erst abgefragt — das spart pro Domain einen kompletten
   Timeout-und-Retry-Zyklus — und erscheinen als _Manuell prüfen_ mit direktem Link auf die
-  RDAP-Antwort. Ohne Backend ist mehr nicht möglich, und ein Backend würde die Eingaben der
-  Nutzer über einen fremden Server leiten.
+  RDAP-Antwort. Teilweise auflösen lässt sich das mit der [DNS-Vorprüfung](#dns-vorprüfung).
 
 - **Lücken in IANA's `dns.json`.** Manche Registries betreiben RDAP, sind dort aber nicht
   eingetragen. Siehe [Manuelle Ergänzungen](#manuelle-ergänzungen).
@@ -96,6 +95,28 @@ auf **Hinweis** herabgestuft — statt es zu verschweigen oder die Zeile abzuleh
   sichtbar. Die endgültige Auskunft gibt der Registrar.
 - **Maximal 500 Domains pro Lauf**, damit ein versehentlich eingefügtes Tabellenblatt keine
   Registry flutet.
+
+## DNS-Vorprüfung
+
+Optionaler Schalter unter dem Eingabefeld, **standardmäßig aus**. Er greift ausschließlich
+für Registries, die den Browser blockieren, und nutzt eine Schlussfolgerung, die in genau eine
+Richtung gilt:
+
+> Die Domain hat NS-Records ⟹ sie ist delegiert ⟹ sie ist registriert.
+
+Delegation existiert nur für registrierte Namen, diese Richtung kann also nicht falsch sein. Die
+Umkehrung gilt **nicht**: Frisch registrierte, geparkte oder defensiv gehaltene Domains ohne
+Nameserver sehen im DNS aus wie freie. Deshalb kennt [`src/core/dns.ts`](src/core/dns.ts) keinen
+Rückgabewert `not-delegated` — NXDOMAIN, Timeout und Schrottantwort werden alle zu `unknown`. Die
+unsichere Schlussfolgerung ist damit nicht bloß unerwünscht, sondern gar nicht ausdrückbar.
+
+Praktisch heißt das: `.de`-Domains mit Nameservern werden sicher als _Vergeben_ erkannt und
+verschwinden aus der Liste; der Rest bleibt _Manuell prüfen_. Beim Namens-Brainstorming schrumpft
+die Klickliste damit erheblich, ohne dass je ein falsches „frei" entstehen kann.
+
+**Preis:** Die Abfrage geht an Cloudflare DNS (1.1.1.1) statt nur an die Registry. Das ist der
+einzige Punkt, an dem das Werkzeug einen Dritten kontaktiert — deshalb Opt-in, deshalb der
+Klartext-Hinweis am Schalter.
 
 ## Manuelle Ergänzungen
 
