@@ -1,3 +1,13 @@
+## 1.0.0 (2026-08-02)
+
+### 🚀 Features
+
+* implemented RDAP domain checker ([75b22dc](https://github.com/karlspace/RDAP-DomainCheck/commit/75b22dc7d65daf720afaa47d64c481d9114ff02c))
+
+### 🐛 Bug Fixes
+
+* stopped debounce from leaking across app instances ([a4c8ca1](https://github.com/karlspace/RDAP-DomainCheck/commit/a4c8ca120e8430e75f5bb70be7d01f29109a63e1))
+
 # Changelog
 
 Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
