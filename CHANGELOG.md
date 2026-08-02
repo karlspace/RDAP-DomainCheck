@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.1.0...v1.1.1) (2026-08-02)
+
+### 🐛 Bug Fixes
+
+* corrected layout faults found by looking at the page ([df632fe](https://github.com/karlspace/RDAP-DomainCheck/commit/df632fedbc401bafa40975f3ecb7e86f8fbdc67c))
+
 ## [1.1.0](https://github.com/karlspace/RDAP-DomainCheck/compare/v1.0.2...v1.1.0) (2026-08-02)
 
 ### 🚀 Features
