@@ -1,0 +1,80 @@
+# =============================================================================
+# Release
+# =============================================================================
+# Validates the full quality gate and cuts a semantic release from the
+# conventional commits on main. CHANGELOG.md is maintained by the shared
+# semantic-release module from here on.
+#
+# The published site is deployed separately by deploy-pages.yml, which keys off
+# this workflow completing so a release always republishes Pages.
+#
+# Pipeline: Validate (format + lint + typecheck + test + build) → Semantic Release
+# =============================================================================
+
+name: 🚀 Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '.github/**'
+      - '*.md'
+  workflow_dispatch:
+    inputs:
+      force-release:
+        description: 'force create release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+  id-token: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Validation: same gate as the PR workflow
+  # ---------------------------------------------------------------------------
+
+  validate:
+    name: 🔍 Validate Node.js Build
+    uses: bauer-group/automation-templates/.github/workflows/nodejs-build.yml@main
+    with:
+      node-version-file: '.nvmrc'
+      package-manager: 'npm'
+      frozen-lockfile: true
+      run-format-check: true
+      format-command: 'npm run format:check'
+      run-lint: true
+      lint-command: 'npm run lint'
+      run-typecheck: true
+      typecheck-command: 'npm run typecheck'
+      run-tests: true
+      test-command: 'npm run test'
+      test-coverage: true
+      coverage-command: 'npm run test:coverage'
+      build-command: 'npm run build'
+      run-audit: true
+      audit-level: 'high'
+      audit-production-only: true
+      upload-artifacts: false
+    secrets: inherit
+
+  # ---------------------------------------------------------------------------
+  # Semantic Release (only after successful validation)
+  # ---------------------------------------------------------------------------
+
+  release:
+    name: 📦 Create Semantic Release
+    needs: [validate]
+    if: |
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.validate.result == 'success'
+    uses: bauer-group/automation-templates/.github/workflows/modules-semantic-release.yml@main
+    with:
+      target-branch: 'main'
+      dry-run: false
+      force-release: ${{ inputs.force-release || false }}
+    secrets: inherit

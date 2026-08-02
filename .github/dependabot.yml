@@ -1,0 +1,63 @@
+# =============================================================================
+# Dependabot Configuration
+# =============================================================================
+# The shipped application has zero runtime dependencies — every entry below is
+# build, test or CI tooling. Grouping keeps that to one reviewable PR per
+# ecosystem per week instead of a dozen isolated bumps.
+# =============================================================================
+
+version: 2
+updates:
+  # ---------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+      time: '06:30'
+      timezone: 'Etc/UTC'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
+      - 'dependabot'
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  # ---------------------------------------------------------------------------
+  # npm (build + test tooling)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+      time: '06:30'
+      timezone: 'Etc/UTC'
+    labels:
+      - 'dependencies'
+      - 'npm'
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      build-tooling:
+        patterns:
+          - 'vite'
+      test-tooling:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+          - 'happy-dom'
+      dev-tooling:
+        patterns:
+          - 'eslint*'
+          - '@eslint/*'
+          - 'typescript'
+          - 'typescript-eslint'
+          - 'globals'
+          - 'prettier*'

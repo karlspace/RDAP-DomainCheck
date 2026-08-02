@@ -1,0 +1,54 @@
+# =============================================================================
+# Pull Request validation
+# =============================================================================
+# Delegates to the shared Node.js build workflow rather than reimplementing the
+# toolchain locally. This repo is plain npm (no pnpm/turbo `packageManager`
+# conflict), so the reusable workflow applies without the workarounds some
+# sibling repos need.
+#
+# Pipeline: format check → lint → typecheck → tests (with coverage gate) →
+#           build → npm audit
+# =============================================================================
+
+name: ✅ PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: 🔍 Validate Node.js Build
+    uses: bauer-group/automation-templates/.github/workflows/nodejs-build.yml@main
+    with:
+      node-version-file: '.nvmrc'
+      package-manager: 'npm'
+      frozen-lockfile: true
+      run-format-check: true
+      format-command: 'npm run format:check'
+      run-lint: true
+      lint-command: 'npm run lint'
+      run-typecheck: true
+      typecheck-command: 'npm run typecheck'
+      run-tests: true
+      test-command: 'npm run test'
+      # Coverage thresholds live in vitest.config.ts (80% across the board), so
+      # the run itself is the gate — no second number to keep in sync here.
+      test-coverage: true
+      coverage-command: 'npm run test:coverage'
+      build-command: 'npm run build'
+      run-audit: true
+      audit-level: 'high'
+      # The app ships zero runtime dependencies; only dev tooling could ever
+      # flag, and that must not block a PR on a transitive advisory.
+      audit-production-only: true
+      upload-artifacts: false
+    secrets: inherit

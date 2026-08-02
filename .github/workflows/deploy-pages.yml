@@ -1,0 +1,123 @@
+# =============================================================================
+# GitHub Pages — RDAP Domain Check
+# =============================================================================
+# Publishes the built app to GitHub Pages. Self-hosted rather than a reusable
+# workflow: the shared library has no Pages module, and the two-job
+# build → deploy split with OIDC is the pattern the sibling Pages repos use.
+#
+# The quality gate runs here as well as in release.yml on purpose. release.yml
+# carries `paths-ignore: .github/**`, so a workflow-only change would otherwise
+# reach Pages unvalidated — and here the published site *is* the product.
+#
+# Triggers: source pushes to main, a completed Release (the release commit is
+# pushed with GITHUB_TOKEN and cannot re-trigger the push event), and manual.
+# =============================================================================
+
+name: 🌐 Deploy Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'tsconfig.json'
+      - '.nvmrc'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_run:
+    workflows: ['🚀 Release']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a running deployment: a half-published site is worse than a
+# slightly delayed one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # On a workflow_run trigger, only publish when the Release actually
+    # succeeded; push and manual runs are unconditional.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v7
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 💅 Format check
+        run: npm run format:check
+
+      - name: 🎨 Lint
+        run: npm run lint
+
+      - name: 🔎 Typecheck
+        run: npm run typecheck
+
+      - name: 🧪 Test
+        run: npm run test:coverage
+
+      - name: 🔧 Resolve Pages base path
+        id: base
+        # A project site lives under /<repo>/, a user or organisation site at /.
+        # The repository name goes through the environment rather than being
+        # interpolated into the script, which is the injection-safe pattern.
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          if [[ "$REPO_NAME" == *.github.io ]]; then
+            echo "path=/" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/$REPO_NAME/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🏗️ Build
+        env:
+          BASE_PATH: ${{ steps.base.outputs.path }}
+        run: npm run build
+
+      - name: ⚙️ Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: 📤 Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: 🚀 Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
