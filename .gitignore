@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.local
+
+# Test artifacts
+coverage/
+
+# Tooling caches
+.vite/
+.eslintcache
+*.tsbuildinfo
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Environment (never commit real secrets; .env.example is fine)
+.env
+.env.*
+!.env.example

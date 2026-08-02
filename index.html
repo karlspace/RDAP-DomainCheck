@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <!--CSP-PLACEHOLDER-->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Keeps this page's URL out of every registry's access log. -->
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f6f8f9" />
+    <meta
+      name="description"
+      content="Bulk domain availability check via RDAP. Runs entirely in the browser — no backend, no tracking."
+    />
+    <title>RDAP Domain Check</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <!--
+    Every visible string carries a German default in the markup and a
+    `data-i18n` key. The defaults are what the browser paints before the module
+    executes and what remains if JavaScript never arrives; `applyTranslations()`
+    then swaps them for the active locale.
+  -->
+  <body>
+    <a class="skip-link" href="#main" data-i18n="app.skipToContent">Zum Inhalt springen</a>
+
+    <div class="shell">
+      <header class="masthead">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div class="brand-text">
+            <p class="eyebrow" data-i18n="app.eyebrow">RDAP · RFC 9082</p>
+            <h1 data-i18n="app.title">Domain-Verfügbarkeit prüfen</h1>
+          </div>
+        </div>
+
+        <div class="masthead-actions">
+          <div
+            class="segmented"
+            role="group"
+            id="themeSwitch"
+            aria-label="Darstellung"
+            data-i18n-label="nav.theme"
+          >
+            <button type="button" data-theme-value="system" data-i18n="theme.system">System</button>
+            <button type="button" data-theme-value="light" data-i18n="theme.light">Hell</button>
+            <button type="button" data-theme-value="dark" data-i18n="theme.dark">Dunkel</button>
+          </div>
+          <div
+            class="segmented"
+            role="group"
+            id="localeSwitch"
+            aria-label="Sprache"
+            data-i18n-label="nav.language"
+          >
+            <button type="button" data-locale-value="de">DE</button>
+            <button type="button" data-locale-value="en">EN</button>
+          </div>
+        </div>
+      </header>
+
+      <p class="lead" data-i18n="app.subtitle">
+        Fragt die zuständigen Registries direkt über RDAP ab — strukturiert statt WHOIS-Freitext.
+        Läuft vollständig im Browser, ohne Backend.
+      </p>
+
+      <p class="status-line" id="bootstrapStatus" role="status" aria-live="polite"></p>
+
+      <main id="main">
+        <section class="card">
+          <div class="tabs" role="tablist">
+            <button
+              type="button"
+              class="tab"
+              role="tab"
+              id="tabList"
+              aria-controls="panelList"
+              aria-selected="true"
+              data-i18n="input.tab.list"
+            >
+              Domain-Liste
+            </button>
+            <button
+              type="button"
+              class="tab"
+              role="tab"
+              id="tabMatrix"
+              aria-controls="panelMatrix"
+              aria-selected="false"
+              data-i18n="input.tab.matrix"
+            >
+              TLD-Matrix
+            </button>
+          </div>
+
+          <div class="panel" id="panelList" role="tabpanel" aria-labelledby="tabList">
+            <label class="field-label" for="domainInput" data-i18n="input.list.label">
+              Domains (eine pro Zeile)
+            </label>
+            <textarea
+              id="domainInput"
+              rows="7"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+              placeholder="beispiel-firma.de"
+              data-i18n-placeholder="input.list.placeholder"
+            ></textarea>
+          </div>
+
+          <div class="panel" id="panelMatrix" role="tabpanel" aria-labelledby="tabMatrix" hidden>
+            <div class="matrix-grid">
+              <div class="matrix-column">
+                <label class="field-label" for="matrixNames" data-i18n="input.matrix.namesLabel">
+                  Namen
+                </label>
+                <textarea
+                  id="matrixNames"
+                  rows="6"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  autocomplete="off"
+                  placeholder="beispiel-firma"
+                  data-i18n-placeholder="input.matrix.namesPlaceholder"
+                ></textarea>
+              </div>
+              <div class="matrix-column">
+                <label class="field-label" for="matrixTlds" data-i18n="input.matrix.tldsLabel">
+                  Endungen
+                </label>
+                <textarea
+                  id="matrixTlds"
+                  rows="6"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  autocomplete="off"
+                  placeholder="de com net eu io"
+                  data-i18n-placeholder="input.matrix.tldsPlaceholder"
+                ></textarea>
+                <div class="preset-row" id="tldPresets"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <p class="hint" id="inputHint" aria-live="polite"></p>
+            <div class="actions">
+              <button type="button" class="btn btn-ghost" id="clearBtn" data-i18n="action.clear">
+                Leeren
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-danger"
+                id="cancelBtn"
+                hidden
+                data-i18n="action.cancel"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                id="checkBtn"
+                disabled
+                data-i18n="action.check"
+              >
+                Verfügbarkeit prüfen
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="resultsCard" hidden>
+          <div class="results-header">
+            <h2 data-i18n="results.title">Ergebnisse</h2>
+            <p class="progress-text" id="progressText"></p>
+          </div>
+
+          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-label="Fortschritt">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+
+          <div class="toolbar">
+            <div
+              class="segmented segmented-filter"
+              role="group"
+              id="statusFilter"
+              aria-label="Filter"
+            >
+              <button type="button" data-filter="all" aria-pressed="true">
+                <span data-i18n="filter.all">Alle</span><span class="filter-count">0</span>
+              </button>
+              <button type="button" data-filter="available" aria-pressed="false">
+                <span data-i18n="summary.available">Frei</span><span class="filter-count">0</span>
+              </button>
+              <button type="button" data-filter="registered" aria-pressed="false">
+                <span data-i18n="summary.registered">Vergeben</span
+                ><span class="filter-count">0</span>
+              </button>
+              <button type="button" data-filter="inconclusive" aria-pressed="false">
+                <span data-i18n="summary.inconclusive">Unklar</span
+                ><span class="filter-count">0</span>
+              </button>
+            </div>
+
+            <div class="toolbar-right">
+              <input
+                class="search-input"
+                id="searchInput"
+                type="search"
+                autocomplete="off"
+                aria-label="Suchen"
+                placeholder="Domain filtern …"
+                data-i18n-placeholder="filter.searchPlaceholder"
+                data-i18n-label="filter.search"
+              />
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="copyBtn"
+                data-i18n="export.copyAvailable"
+              >
+                Freie kopieren
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="csvBtn" data-i18n="export.csv">
+                CSV
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                id="jsonBtn"
+                data-i18n="export.json"
+              >
+                JSON
+              </button>
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="table.domain">Domain</th>
+                  <th scope="col" data-i18n="table.status">Status</th>
+                  <th scope="col" class="col-secondary" data-i18n="table.registrar">Registrar</th>
+                  <th scope="col" class="col-secondary" data-i18n="table.expires">Läuft ab</th>
+                  <th scope="col" class="col-secondary" data-i18n="table.registry">Registry</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+
+          <p class="empty-state" id="emptyState" hidden></p>
+        </section>
+      </main>
+
+      <footer class="colophon">
+        <p data-i18n="footer.privacy">
+          Alle Abfragen laufen direkt vom Browser zur jeweiligen Registry. Es gibt kein Backend,
+          kein Tracking und keine Analyse.
+        </p>
+        <p data-i18n="footer.cors">
+          Registries ohne CORS-Freigabe erscheinen als „Nicht erreichbar" — die Antwort lässt sich
+          über den JSON-Link manuell prüfen.
+        </p>
+        <p class="colophon-links">
+          <a
+            href="https://github.com/karlspace/RDAP-DomainCheck"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-i18n="footer.source"
+            >Quellcode</a
+          >
+          <span aria-hidden="true">·</span>
+          <a href="https://data.iana.org/rdap/dns.json" target="_blank" rel="noopener noreferrer"
+            >IANA RDAP Bootstrap</a
+          >
+          <span aria-hidden="true">·</span>
+          <a href="https://www.rfc-editor.org/rfc/rfc9082" target="_blank" rel="noopener noreferrer"
+            >RFC 9082</a
+          >
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
