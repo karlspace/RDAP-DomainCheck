@@ -61,7 +61,10 @@
      (eyebrows, field labels, the registrar column), not just decoration. */
   --ink: light-dark(#14162a, #e8eaf5);
   --ink-muted: light-dark(#585e78, #9aa0bd);
-  --ink-faint: light-dark(#676d85, #7d83a0);
+  /* Light value is a notch darker than the surface alone would need: the
+     ambient light tints the backdrop under the eyebrow, and the check that
+     matters is against the rendered pixel, not the token. */
+  --ink-faint: light-dark(#61667c, #7d83a0);
 
   /* The one saturated colour. Nothing else on the page may use it.
      The light value is darker than it wants to be so it still clears AA on the
@@ -82,14 +85,30 @@
   --radius: 4px;
   --radius-lg: 10px;
 
+  /*
+   * Grain strength cannot use light-dark(): that function is defined for
+   * <color> values only, so on a number the whole declaration is dropped and
+   * opacity silently falls back to 1 — which rendered the noise at full
+   * strength across the page. Hence the explicit per-scheme values below.
+   */
+  --grain: 0.05;
+
   --shadow: 0 18px 40px -28px light-dark(rgb(20 22 42 / 45%), rgb(0 0 0 / 90%));
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --grain: 0.03;
+  }
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
+  --grain: 0.03;
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --grain: 0.05;
 }
 
 *,
@@ -123,6 +142,55 @@ body {
   color: var(--ink);
   background: var(--void);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * The housing gets depth from two fixed layers, both behind the content and
+ * both inert to the pointer.
+ *
+ * Ambient light sits behind the masthead only. The results area stays flat on
+ * purpose: that is where the rails are scanned, and texture under a scan target
+ * is noise. Light where you read prose, calm where you read data.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      76vw 54vh at 6% -12%,
+      light-dark(rgb(9 122 83 / 10%), rgb(61 220 151 / 14%)),
+      transparent 68%
+    ),
+    radial-gradient(
+      70vw 52vh at 96% -16%,
+      light-dark(rgb(111 82 160 / 13%), rgb(126 98 200 / 26%)),
+      transparent 70%
+    ),
+    radial-gradient(
+      100vw 42vh at 50% 112%,
+      light-dark(rgb(111 82 160 / 7%), rgb(108 86 176 / 15%)),
+      transparent 72%
+    );
+}
+
+/* Cards stay fully opaque on purpose. Letting the light bleed through them
+   would be the fashionable move and would also put a wash behind every domain
+   name — the atmosphere belongs in the negative space, the data stays crisp. */
+
+/* Film grain: pure luminance, no hue, just enough to stop the surface reading
+   as flat paint. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url('../assets/grain.svg');
+  background-repeat: repeat;
+  opacity: var(--grain);
 }
 
 h1,
@@ -353,7 +421,12 @@ main {
   background: var(--panel);
   border: 1px solid var(--edge);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  /* The inset top line reads as a lit edge, the way a physical panel catches
+     the light above it. Costs nothing and does most of the work of making the
+     surface feel like an object rather than a rectangle. */
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 light-dark(rgb(255 255 255 / 0%), rgb(255 255 255 / 7%));
   overflow: hidden;
 }
 
