@@ -5,10 +5,10 @@
  * every other locale is checked against it at compile time.
  */
 export const de = {
-  'app.eyebrow': 'RDAP · RFC 9082',
-  'app.title': 'Domain-Verfügbarkeit prüfen',
+  'app.eyebrow': 'RDAP · direkt bei der Registry',
+  'app.title': 'Welcher Name ist noch frei?',
   'app.subtitle':
-    'Fragt die zuständigen Registries direkt über RDAP ab — strukturiert statt WHOIS-Freitext. Läuft vollständig im Browser, ohne Backend.',
+    'Fragt für jede Domain die zuständige Registry — strukturierte Daten statt WHOIS-Freitext, im Browser, ohne Backend. Was unsicher ist, steht als unsicher da.',
   'app.skipToContent': 'Zum Inhalt springen',
 
   'nav.language': 'Sprache',

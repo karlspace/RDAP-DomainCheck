@@ -102,6 +102,6 @@ describe('theme', () => {
 
     initTheme();
     setTheme('dark');
-    expect(meta.content).toBe('#0d1117');
+    expect(meta.content).toBe('#0b0d16');
   });
 });

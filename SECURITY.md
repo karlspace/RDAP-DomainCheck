@@ -70,9 +70,11 @@ behandelt:
 
 ### Datenschutz
 
-- **Keine externen Ressourcen.** Keine Webfonts, keine CDNs, kein Analytics. Der System-Font-Stack
-  ersetzt die im Prototyp verwendete Google-Fonts-Einbindung, die die IP-Adresse jedes Besuchers
-  ohne Einwilligung an Google übertragen hätte (LG München I, 3 O 17493/20).
+- **Keine externen Ressourcen.** Keine CDNs, kein Analytics. Die Schrift (Archivo, OFL) liegt im
+  Repository und wird vom eigenen Origin ausgeliefert — die CSP kommt deshalb mit
+  `font-src 'self'` aus. Die im Prototyp verwendete Google-Fonts-Einbindung hätte die IP-Adresse
+  jedes Besuchers ohne Einwilligung an Google übertragen (LG München I, 3 O 17493/20);
+  Selbsthosting vermeidet das, ohne auf eine eigene Typografie zu verzichten.
 - **`<meta name="referrer" content="no-referrer">`** — die abgefragten Registries erfahren nicht,
   von welcher Seite die Anfrage kommt.
 - **`credentials: 'omit'`** bei jeder Anfrage — es werden keine Cookies mitgesendet.

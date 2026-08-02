@@ -7,10 +7,10 @@ import type { TranslationKey } from '../keys.js';
  * `npm run typecheck` instead of silently rendering an empty label.
  */
 export const en: Record<TranslationKey, string> = {
-  'app.eyebrow': 'RDAP · RFC 9082',
-  'app.title': 'Check domain availability',
+  'app.eyebrow': 'RDAP · straight from the registry',
+  'app.title': 'Which name is still free?',
   'app.subtitle':
-    'Queries the responsible registries directly over RDAP — structured data instead of WHOIS free text. Runs entirely in your browser, no backend.',
+    'Asks the registry responsible for each domain — structured data instead of WHOIS free text, in your browser, with no backend. Anything uncertain is labelled uncertain.',
   'app.skipToContent': 'Skip to content',
 
   'nav.language': 'Language',

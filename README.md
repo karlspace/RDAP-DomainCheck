@@ -153,8 +153,9 @@ Details in [SECURITY.md](SECURITY.md). Die Kurzfassung:
   blockt jede Zuweisung an `innerHTML`/`outerHTML`/`insertAdjacentHTML` projektweit.
 - **URLs aus Fremddaten** werden zweifach geprüft (beim Einlesen der Bootstrap-Datei und beim
   Rendern) und nur mit `https:` akzeptiert.
-- **Keine externen Ressourcen** — keine Webfonts, keine CDNs, keine Analytics. System-Font-Stack
-  statt Google Fonts, damit keine Besucher-IP an Dritte fließt (DSGVO).
+- **Keine externen Ressourcen** — keine CDNs, keine Analytics. Die Schrift (Archivo, OFL) liegt
+  selbstgehostet in [`src/assets/fonts/`](src/assets/fonts/) und wird vom eigenen Origin
+  ausgeliefert; es geht keine Besucher-IP an einen Font-CDN (DSGVO).
 - **`referrer: no-referrer`** — die aufgerufene Seite taucht in keinem Registry-Log auf.
 - **CSV-Export ist injection-sicher** — Zellen, die mit `= + - @` beginnen, werden neutralisiert,
   damit Registry-Daten in Excel keine Formeln werden (CWE-1236).

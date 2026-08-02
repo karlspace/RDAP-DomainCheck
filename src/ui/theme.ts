@@ -38,7 +38,8 @@ function apply(): void {
 
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta instanceof HTMLMetaElement) {
-    meta.content = resolved === 'dark' ? '#0d1117' : '#f6f8f9';
+    // Must track --void in app.css so the browser chrome matches the page.
+    meta.content = resolved === 'dark' ? '#0b0d16' : '#f5f5fa';
   }
 }
 
