@@ -44,15 +44,31 @@ updates:
       - 'npm'
     commit-message:
       prefix: 'chore(deps)'
+    # One PR per run for all minor and patch updates, which
+    # dependabot-maintenance.yml merges once pr.yml has passed. A grouped
+    # PR counts as its strictest update and the gate treats a 0.x minor as
+    # major, so a 0.x dependency would hold the whole group open - none is
+    # 0.x today; add exclude-patterns here if one is added. Majors fall
+    # through to the named groups below and stay open for review.
     groups:
+      npm-minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
       build-tooling:
         patterns:
           - 'vite'
+        update-types:
+          - 'major'
       test-tooling:
         patterns:
           - 'vitest'
           - '@vitest/*'
           - 'happy-dom'
+        update-types:
+          - 'major'
       dev-tooling:
         patterns:
           - 'eslint*'
@@ -61,6 +77,8 @@ updates:
           - 'typescript-eslint'
           - 'globals'
           - 'prettier*'
+        update-types:
+          - 'major'
     ignore:
       # typescript-eslint (latest 8.74.0) peers typescript >=4.8.4 <6.1.0, so
       # TypeScript 7 fails `npm ci` with ERESOLVE. Remove once it supports 7.
